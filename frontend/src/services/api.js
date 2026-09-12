@@ -11,4 +11,5 @@ export const getTransactions = (id,page=1,options) => request(`${customerPath('t
 export const getFinancialHealth = (id,options) => request(customerPath('financial-health',id),options);
 export const getFinancialState = (id,options) => request(customerPath('financial-state',id),options);
 export const getSpending = (id,options) => request(customerPath('spending',id),options);
+export const getRecommendations = (id,options) => request(customerPath('recommendations',id),options);
 export const api = { health: () => request('/health'), dashboard: () => request('/dashboard'), transactions: () => request('/transactions') };

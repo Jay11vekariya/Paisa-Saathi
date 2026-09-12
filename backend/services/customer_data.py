@@ -2,6 +2,7 @@ from werkzeug.exceptions import NotFound, Conflict
 from db import get_collection
 from utils.validation import customer_id
 from services.financial_health import analyse
+from services.recommendations import recommend
 
 USER_FIELDS = {'_id':0,'dataset':0}
 TX_FIELDS = {'_id':0,'dataset':0,'synthetic':0}
@@ -28,6 +29,15 @@ def load_ledger(cid):
 
 def dashboard_for(cid):
     return analyse(*load_ledger(cid))
+
+def recommendations_for(cid):
+    analysis = dashboard_for(cid)
+    products = list(get_collection('products').find(
+        {'synthetic':True}, {'_id':0, 'dataset':0, 'synthetic':0}
+    ).sort('product_id', 1))
+    result = recommend(analysis['metrics'], analysis['financial_state'], products)
+    return dict(customer=analysis['customer'], metrics=analysis['metrics'], period=analysis['period'],
+                source='mongodb', synthetic=True, **result)
 
 def transactions_for(cid,page=1,limit=20):
     load_customer(cid)

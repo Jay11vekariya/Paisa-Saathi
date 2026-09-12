@@ -13,6 +13,7 @@ from seed import seed_data
 from services.synthetic import generate, DATASET, completed_months
 from services.financial_health import analyse, change, months_between
 from services.financial_state import determine_state
+from services.recommendations import recommend
 from utils.validation import validate_transaction
 
 # mongomock 4.3 predates PyMongo's optional sort argument on ReplaceOne.
@@ -95,6 +96,37 @@ class AnalyticsTests(unittest.TestCase):
         m['income_disruption']=True
         self.assertEqual(determine_state(m)['state'],'SUPPORT')
 
+    def test_recommendations_are_explainable_and_state_aware(self):
+        for number, expected in enumerate(['GROWTH','NORMAL','CAUTION','SUPPORT']):
+            result=analysis(number)
+            recommendations= recommend(result['metrics'],result['financial_state'],DATA['products'])
+            with self.subTest(state=expected):
+                self.assertEqual(recommendations['financial_state'],expected)
+                self.assertTrue(recommendations['recommendations'])
+                self.assertTrue(all(row['action'] and row['category'] and row['reason'] and row['why_this'] and row['why_it_may_help'] and row['suitability'] and row['confidence'] and row['priority'] for row in recommendations['recommendations']))
+                self.assertTrue(all(row['why_not_this'] and row['rejection_conditions'] and row['safer_alternative']['action'] for row in recommendations['not_recommended']))
+                self.assertEqual(recommendations['engine']['decision_mode'],'deterministic')
+        support=recommend(analysis(3)['metrics'],analysis(3)['financial_state'],DATA['products'])
+        self.assertEqual(support['recommendations'][0]['product']['product_id'],'PR007')
+        self.assertIn('PR005',{row['product']['product_id'] for row in support['not_recommended']})
+        self.assertNotIn('PR005',{row['product']['product_id'] for row in support['recommendations']})
+
+    def test_healthy_customer_gets_suitable_savings_and_no_default_loan(self):
+        result=recommend(analysis(0)['metrics'],analysis(0)['financial_state'],DATA['products'])
+        product_ids={row['product']['product_id'] for row in result['recommendations']}
+        rejected={row['product']['product_id']:row for row in result['not_recommended']}
+        self.assertIn('PR002',product_ids)
+        self.assertIn('PR005',rejected)
+        self.assertIn('no stated borrowing need',rejected['PR005']['why_not_this'])
+
+    def test_stressed_customer_rejection_names_conditions_and_safe_alternative(self):
+        result=recommend(analysis(3)['metrics'],analysis(3)['financial_state'],DATA['products'])
+        rejected={row['product']['product_id']:row for row in result['not_recommended']}
+        loan=rejected['PR005']
+        self.assertTrue(any('income' in condition.lower() or 'emi' in condition.lower() for condition in loan['rejection_conditions']))
+        self.assertEqual(loan['safer_alternative']['category'],'Financial guidance')
+        self.assertIn('repayment',loan['safer_alternative']['action'].lower())
+
     def test_malformed_transactions_are_rejected(self):
         row=DATA['transactions'][0]
         for field,values in {'amount':[0,-1,float('nan'),float('inf'),True,'20'],'type':['refund',''],'date':['2026-02-30','2026-8-1','bad'],'category':['Unknown'],'customer_id':['$ne','../../x','PS01']}.items():
@@ -113,13 +145,23 @@ class MongoIntegrationTests(unittest.TestCase):
 
     def test_all_customer_endpoints(self):
         self.assertEqual(len(self.client.get('/api/customers').json['customers']),20)
-        for endpoint in ['dashboard','transactions','financial-health','financial-state','spending']:
+        for endpoint in ['dashboard','transactions','financial-health','financial-state','spending','recommendations']:
             with self.subTest(endpoint=endpoint):
                 response=self.client.get('/api/'+endpoint+'/PS001')
                 self.assertEqual(response.status_code,200)
                 self.assertEqual(response.json['source'],'mongodb')
                 self.assertNotIn('MONGO_URI',response.get_data(as_text=True))
         self.assertEqual(self.client.get('/api/dashboard/PS003').json['financial_state']['state'],'CAUTION')
+
+    def test_recommendation_api_uses_calculated_customer_state(self):
+        support=self.client.get('/api/recommendations/PS004')
+        self.assertEqual(support.status_code,200)
+        self.assertEqual(support.json['financial_state'],'SUPPORT')
+        self.assertEqual(support.json['recommendations'][0]['product']['product_id'],'PR007')
+        self.assertTrue(support.json['not_recommended'])
+        self.assertIn('safer_alternative',support.json['not_recommended'][0])
+        self.assertIn('confidence',support.json['recommendations'][0])
+        self.assertEqual(self.client.get('/api/recommendations/bad').status_code,400)
 
     def test_customer_isolation_and_pagination(self):
         first=self.client.get('/api/transactions/PS002?page=1&limit=20').json
