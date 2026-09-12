@@ -12,4 +12,9 @@ def prepare_collections():
                 database.create_collection(name)
             except CollectionInvalid:
                 pass  # Another process may have created it concurrently.
-    current_app.logger.info('Prepared the seven Phase 1 collections without inserting data.')
+    users = database['users']
+    users.create_index('email', unique=True, sparse=True)
+    users.create_index('customer_id', unique=True)
+    database['customer_profiles'].create_index('customer_id', unique=True)
+    database['transactions'].create_index([('customer_id', 1), ('date', -1)])
+    current_app.logger.info('Prepared application collections and indexes without inserting data.')

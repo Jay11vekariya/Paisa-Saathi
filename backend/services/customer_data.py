@@ -17,6 +17,45 @@ def load_customer(cid):
         raise NotFound('Synthetic customer not found.')
     return user
 
+def is_synthetic_customer(cid):
+    return get_collection('users').find_one({'customer_id':cid, 'synthetic':True}, {'_id':1}) is not None
+
+def dashboard_for_authenticated(cid):
+    return dashboard_for(cid) if is_synthetic_customer(cid) else dashboard_for_private(cid)
+
+def recommendations_for_authenticated(cid):
+    return recommendations_for(cid) if is_synthetic_customer(cid) else recommendations_for_private(cid)
+
+def transactions_for_authenticated(cid, page=1, limit=20):
+    return transactions_for(cid, page, limit) if is_synthetic_customer(cid) else private_transactions_for(cid, page, limit)
+
+def load_private_ledger(cid):
+    user = get_collection('users').find_one({'customer_id':cid, 'synthetic': {'$ne': True}}, USER_FIELDS)
+    if user is None:
+        raise NotFound('Customer not found.')
+    profile = get_collection('customer_profiles').find_one({'customer_id':cid}, {'_id':0})
+    if profile is None:
+        raise Conflict('Customer onboarding is incomplete.')
+    rows = list(get_collection('transactions').find({'customer_id':cid, 'synthetic': {'$ne': True}}, TX_FIELDS).sort([('date',1),('transaction_id',1)]))
+    return user, rows, profile
+
+def dashboard_for_private(cid):
+    return analyse(*load_private_ledger(cid))
+
+def recommendations_for_private(cid):
+    analysis = dashboard_for_private(cid)
+    products = list(get_collection('products').find({'synthetic':True}, {'_id':0, 'dataset':0, 'synthetic':0}).sort('product_id', 1))
+    result = recommend(analysis['metrics'], analysis['financial_state'], products)
+    return dict(customer=analysis['customer'], metrics=analysis['metrics'], period=analysis['period'], source='onboarding', synthetic=False, **result)
+
+def private_transactions_for(cid, page=1, limit=20):
+    load_private_ledger(cid)
+    query = {'customer_id':cid, 'synthetic': {'$ne': True}}
+    collection = get_collection('transactions'); total = collection.count_documents(query)
+    rows = list(collection.find(query, TX_FIELDS).sort([('date',-1),('transaction_id',-1)]).skip((page-1)*limit).limit(limit))
+    return dict(customer_id=cid, transactions=rows, page=page, limit=limit, total=total, pages=(total+limit-1)//limit,
+                source='onboarding', synthetic=False)
+
 def load_ledger(cid):
     user = load_customer(cid)
     profile = get_collection('financial_profiles').find_one({'customer_id':cid,'synthetic':True},{'_id':0,'dataset':0})

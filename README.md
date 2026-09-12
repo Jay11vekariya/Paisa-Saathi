@@ -6,7 +6,7 @@ Team Quantum Crew · AI-Powered Hyper-Personalized Banking for Bharat · Digital
 
 ## Current phase
 
-Phase 2: a React application shell, calculated fictional financial analytics, and an explainable, deterministic recommendation engine. This is a local development project, not a production banking system.
+Phase 2: a React application shell, calculated financial analytics, explainable deterministic recommendations, and authenticated onboarding for private new-user profiles. This is a local development project, not a production banking system.
 
 ## Stack and structure
 
@@ -107,6 +107,8 @@ MONGO_URI=
 MONGO_DB_NAME=paisaSaathiDB
 CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 PORT=5000
+JWT_SECRET_KEY=replace-with-a-long-random-secret
+JWT_EXPIRY_HOURS=24
 ```
 
 Only `VITE_API_BASE_URL` belongs in the frontend. Never place MongoDB credentials in a `VITE_` variable. `.env` and virtual environments are ignored; `.env.example` contains no credentials.
@@ -147,6 +149,29 @@ This idempotent command creates `users`, `transactions`, `financial_profiles`, `
 The browser actually requests health, dashboard, and transactions. A visible status distinguishes a connected demo API from an offline preview. Request timeout and errors activate the shared fallback; **Try again** retries all three calls. No raw error trace appears in the interface.
 
 ## Completed functionality
+
+## New-user registration and testing
+
+Set a real `MONGO_URI` and a long random `JWT_SECRET_KEY` in `backend/.env`, then run `init-db` once. Start the backend and frontend using the commands above, visit `/register`, complete onboarding, and open the dashboard. The first overview uses the entered baseline; transactions are optional and improve later insights. Log out from Settings and sign back in with the registered email/password. Duplicate registration returns 409 and an incorrect password returns 401.
+
+Authenticated `GET /api/dashboard`, `GET /api/financial-health`, `GET|POST /api/transactions`, and `GET /api/recommendations` resolve the customer from the JWT. They reuse the shared financial-health, state, and recommendation engines. Parameterized synthetic demo APIs remain available for testing but reject cross-user access when a JWT is supplied.
+
+## Demo accounts — synthetic data only
+
+Seed the existing synthetic customers before using demo buttons on the login page. This adds deterministic demo credentials to their existing customer records; it does not duplicate financial data or overwrite real registered users.
+
+```powershell
+cd 'D:\Paisa Saarthi\backend'
+.\.venv\bin\python.exe seed_demo_users.py
+```
+
+Representative credentials (demo only, not for production):
+
+- Rahul Patel / Growth: `ps001@demo.paisasaathi.local` / `Paisa@PS001`
+- Ramesh Patel / Caution: `ps003@demo.paisasaathi.local` / `Paisa@PS003`
+- Aman Verma / Support: `ps004@demo.paisasaathi.local` / `Paisa@PS004`
+
+Both demo and registered users use `POST /api/auth/login`, a password hash, a JWT containing the linked `customer_id`, and the same server-side authorization checks. Protected browser routes require a stored JWT; logout clears it. A token is also removed when an API response is 401.
 
 Responsive navy liquid-glass shell; desktop/tablet/mobile navigation; login and demo entry; calculated financial metrics and state; financial-health details; API-driven explainable recommendations; quick-action navigation; spending donut; transaction preview; notification, language, and settings notices; API services and demo identity boundary; CORS allowlist; environment loading; graceful database errors; empty collection setup command; centralized fictional data.
 

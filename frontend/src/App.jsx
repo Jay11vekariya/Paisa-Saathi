@@ -10,6 +10,9 @@ import Recommendations from './pages/Recommendations';
 import Chat from './pages/Chat';
 import Security from './pages/Security';
 import LoanSimulator from './pages/LoanSimulator';
-export default function App() { return <DashboardProvider><Routes><Route path="/login" element={<Login/>}/><Route element={<Shell/>}><Route path="/transactions" element={<TransactionsPage/>}/><Route path="/dashboard" element={<Dashboard/>}/><Route path="/financial-health" element={<FinancialHealth/>}/><Route path="/recommendations" element={<Recommendations/>}/><Route path="/chat" element={<Chat/>}/><Route path="/security" element={<Security/>}/><Route path="/loan-simulator" element={<LoanSimulator/>}/></Route><Route path="*" element={<Navigate to="/login" replace/>}/></Routes></DashboardProvider>; }
+import Register from './pages/Register';
+import Onboarding from './pages/Onboarding';
+const RequireAuth = ({children}) => localStorage.getItem('paisa_saathi_token') ? children : <Navigate to="/login" replace/>;
+export default function App() { return <DashboardProvider><Routes><Route path="/login" element={<Login/>}/><Route path="/register" element={<Register/>}/><Route path="/onboarding" element={<RequireAuth><Onboarding/></RequireAuth>}/><Route element={<RequireAuth><Shell/></RequireAuth>}><Route path="/transactions" element={<TransactionsPage/>}/><Route path="/dashboard" element={<Dashboard/>}/><Route path="/financial-health" element={<FinancialHealth/>}/><Route path="/recommendations" element={<Recommendations/>}/><Route path="/chat" element={<Chat/>}/><Route path="/security" element={<Security/>}/><Route path="/loan-simulator" element={<LoanSimulator/>}/></Route><Route path="*" element={<Navigate to="/login" replace/>}/></Routes></DashboardProvider>; }
 
 

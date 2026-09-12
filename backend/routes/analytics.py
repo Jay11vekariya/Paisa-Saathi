@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from werkzeug.exceptions import BadRequest
 from services.customer_data import list_customers, dashboard_for, transactions_for
+from services.auth import assert_current_customer
 
 bp = Blueprint('analytics', __name__)
 
@@ -10,24 +11,29 @@ def customers():
 
 @bp.get('/dashboard/<cid>')
 def dashboard(cid):
+    assert_current_customer(cid)
     return jsonify(dashboard_for(cid))
 
 @bp.get('/financial-health/<cid>')
 def health(cid):
+    assert_current_customer(cid)
     data = dashboard_for(cid)
     return jsonify(customer_id=cid,**data['financial_health'],period=data['period'],source='mongodb')
 
 @bp.get('/financial-state/<cid>')
 def state(cid):
+    assert_current_customer(cid)
     return jsonify(customer_id=cid,**dashboard_for(cid)['financial_state'],source='mongodb')
 
 @bp.get('/spending/<cid>')
 def spending(cid):
+    assert_current_customer(cid)
     data = dashboard_for(cid)
     return jsonify(customer_id=cid,**data['spending'],period=data['period'],source='mongodb')
 
 @bp.get('/transactions/<cid>')
 def transactions(cid):
+    assert_current_customer(cid)
     try:
         page,limit = int(request.args.get('page',1)),int(request.args.get('limit',20))
     except ValueError:

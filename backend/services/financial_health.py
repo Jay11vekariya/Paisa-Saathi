@@ -43,6 +43,7 @@ def analyse(customer, transactions, profile):
             if month == months[-1]:
                 categories[t['category']] += t['amount']
                 daily[t['date']] += t['amount']
+    baseline = profile.get('baseline')
     balance = profile['opening_balance']
     history = []
     for month in months:
@@ -51,6 +52,14 @@ def analyse(customer, transactions, profile):
         balance += b['savings']
         b['balance'] = balance
         history.append({k:round(v,2) if isinstance(v,float) else v for k,v in b.items()})
+    if baseline and not transactions:
+        # A new user has stated a monthly baseline, not fabricated ledger activity.
+        cur = history[-1]
+        cur.update(income=float(baseline['monthly_income']), expenses=float(baseline['monthly_expenses']),
+                   emi_paid=0.0, savings=float(baseline['monthly_income'])-float(baseline['monthly_expenses']),
+                   balance=float(baseline['account_balance']))
+        history[-1] = cur
+        balance = cur['balance']
     cur = history[-1]
     prev = history[-2] if len(history)>1 else {'income':0,'expenses':0,'savings':0,'emi_paid':0,'balance':profile['opening_balance']}
     average = statistics.mean(h['expenses'] for h in history)

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AlertCircle, ArrowRight, CheckCircle2, ShieldAlert, Sparkles } from 'lucide-react';
 import CustomerSwitcher from '../components/dashboard/CustomerSwitcher';
 import DataState from '../components/common/DataState';
-import { getRecommendations } from '../services/api';
+import { getRecommendations, getMyRecommendations } from '../services/api';
 import { money } from '../utils/format';
 import { useDashboard } from '../hooks/useDashboard';
 
@@ -13,7 +13,7 @@ function ProductName({ product }) {
 }
 
 export default function Recommendations() {
-  const { customerId, customer, status: dashboardStatus } = useDashboard();
+  const { customerId, customer, status: dashboardStatus, signedIn } = useDashboard();
   const [data, setData] = useState(null);
   const [status, setStatus] = useState('loading');
   const [retryCount, setRetryCount] = useState(0);
@@ -22,14 +22,14 @@ export default function Recommendations() {
     let active = true;
     const controller = new AbortController();
     setStatus('loading'); setData(null);
-    getRecommendations(customerId, { signal: controller.signal })
+    (signedIn ? getMyRecommendations({ signal: controller.signal }) : getRecommendations(customerId, { signal: controller.signal }))
       .then(result => {
         if (!result.customer || !Array.isArray(result.recommendations) || !Array.isArray(result.not_recommended)) throw new Error('Unexpected recommendation response');
         if (active) { setData(result); setStatus('connected'); }
       })
       .catch(() => { if (active) setStatus('error'); });
     return () => { active = false; controller.abort(); };
-  }, [customerId, retryCount]);
+  }, [customerId, retryCount, signedIn]);
 
   const loading = status === 'loading' || dashboardStatus === 'loading';
   return <><div className="page-heading dashboard-heading"><div><span className="eyebrow">EXPLAINABLE NEXT STEPS</span><h1>Recommendations for your situation.</h1><p>Guidance based on your calculated cash flow — never a sales target.</p></div><CustomerSwitcher/></div>

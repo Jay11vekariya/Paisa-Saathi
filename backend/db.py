@@ -2,7 +2,7 @@ from flask import current_app
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
-COLLECTIONS = ('users', 'transactions', 'financial_profiles', 'recommendations', 'alerts', 'chat_history', 'products')
+COLLECTIONS = ('users', 'customer_profiles', 'transactions', 'financial_profiles', 'recommendations', 'alerts', 'chat_history', 'products')
 
 class DatabaseUnavailable(Exception):
     pass

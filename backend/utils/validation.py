@@ -6,13 +6,13 @@ from werkzeug.exceptions import BadRequest
 CATEGORIES = {'Salary', 'Food', 'Shopping', 'Transport', 'Bills', 'Rent', 'Education', 'Healthcare', 'Entertainment', 'Investment', 'EMI', 'UPI Transfer', 'Other'}
 
 def customer_id(value):
-    if not isinstance(value, str) or not re.fullmatch(r'PS[0-9]{3}', value):
+    if not isinstance(value, str) or not re.fullmatch(r'PS[0-9]{3,}', value):
         raise BadRequest('Customer ID must use the format PS001.')
     return value
 
 def validate_transaction(row):
     customer_id(row.get('customer_id'))
-    if not isinstance(row.get('transaction_id'), str) or not re.fullmatch(r'PS[0-9]{3}-[0-9]{6}-[0-9]{3}', row['transaction_id']):
+    if not isinstance(row.get('transaction_id'), str) or not re.fullmatch(r'PS[0-9]{3,}-(?:[0-9]{6}-[0-9]{3}|[a-f0-9]{9})', row['transaction_id']):
         raise ValueError('Invalid transaction ID.')
     amount = row.get('amount')
     if isinstance(amount, bool) or not isinstance(amount, (int, float)) or not isfinite(amount) or amount <= 0:
