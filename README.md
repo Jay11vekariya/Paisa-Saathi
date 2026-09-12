@@ -6,7 +6,7 @@ Team Quantum Crew · AI-Powered Hyper-Personalized Banking for Bharat · Digital
 
 ## Current phase
 
-Phase 2: a React application shell, calculated financial analytics, explainable deterministic recommendations, and authenticated onboarding for private new-user profiles. This is a local development project, not a production banking system.
+Phase 3: authenticated financial analytics, transparent financial-stress detection, reproducible K-Means customer segmentation, and explainable responsible recommendations. This is a local hackathon prototype, not a production banking system.
 
 ## Stack and structure
 
@@ -30,8 +30,8 @@ frontend/
   index.html, package.json, package-lock.json
   .env, .env.example
 backend/
-  routes/{auth,dashboard,transactions,health,analytics,recommendations}.py
-  services/{auth,demo,financial_health,financial_state,recommendations,synthetic}.py
+  routes/{auth,dashboard,transactions,health,analytics,recommendations,insights}.py
+  services/{auth,demo,financial_health,financial_state,financial_stress,segmentation,recommendations,synthetic}.py
   models/collections.py
   utils/
   app.py, config.py, db.py, requirements.txt, test_api.py
@@ -47,7 +47,7 @@ The synthetic dataset supplies customer histories and fictional products. Recomm
 
 ## Prerequisites
 
-Node.js 22+, npm, Python 3.11+, and a MongoDB Atlas cluster with a database user and the development machine permitted in Atlas Network Access. Standard CPython is simplest on Windows. This machine's `python` is MSYS2 and uses `.venv/bin` instead of `.venv/Scripts`.
+Node.js 22+, npm, standard CPython 3.11–3.13, and a MongoDB Atlas cluster with a database user and the development machine permitted in Atlas Network Access. Standard CPython is required on Windows so compiled NumPy/scikit-learn wheels install reliably.
 
 ## Frontend setup and run
 
@@ -59,7 +59,7 @@ Copy-Item .env.example .env
 npm run dev
 ```
 
-Open http://127.0.0.1:5173. Choose **Demo Login** to open the dashboard. Regular login intentionally displays a future-phase notice and never transmits entered credentials.
+Open http://127.0.0.1:5173. Regular and demo accounts both authenticate through `POST /api/auth/login`; the returned JWT identifies the customer for private API requests.
 
 ```powershell
 npm run build
@@ -80,14 +80,6 @@ python -m pip install -r requirements.txt
 # Only if .env does not already exist:
 Copy-Item .env.example .env
 python app.py
-```
-
-For the MSYS2 virtual environment already created on this machine:
-
-```powershell
-cd 'D:\Paisa Saarthi\backend'
-.\.venv\bin\python.exe -m pip install -r requirements.txt
-.\.venv\bin\python.exe app.py
 ```
 
 macOS/Linux activation: `source .venv/bin/activate`. The API listens on `127.0.0.1:5000`. Run frontend and backend in separate terminals. Restart Flask after changing Python code or backend environment variables; restart Vite after changing frontend environment variables.
@@ -130,8 +122,6 @@ Once the connection is verified, prepare the empty collections:
 ```powershell
 # Standard activated virtual environment:
 python -m flask --app app:create_app init-db
-# Existing MSYS2 virtual environment:
-.\.venv\bin\python.exe -m flask --app app:create_app init-db
 ```
 
 This idempotent command creates `users`, `transactions`, `financial_profiles`, `recommendations`, `alerts`, `chat_history`, and `products`. It does not seed, delete, or overwrite records. MongoDB creates the database when its first collection is created. `get_collection(name)` is the shared abstraction for later services. The running Flask process reuses one MongoClient. If the connection was unavailable at startup, restart after correcting configuration.
@@ -140,13 +130,17 @@ This idempotent command creates `users`, `transactions`, `financial_profiles`, `
 
 - `GET /api/health` — exact service/version liveness response.
 - `GET /api/health/database` — separate database connectivity status (200/503).
-- `GET /api/dashboard` — fictional Rahul Patel dashboard, with `source: demo`.
-- `GET /api/transactions` — five fictional transactions, with `source: demo`.
-- `GET /api/financial-health` — demo score/status, with `source: demo`.
-- `GET /api/recommendations/<customer_id>` — deterministic recommendations and explicitly unsuitable products, using the calculated financial state and fictional product catalog.
+- `GET /api/dashboard` — authenticated customer dashboard; identity comes from the JWT.
+- `GET|POST /api/transactions` — authenticated customer ledger and private manual transaction entry.
+- `GET /api/financial-health` — authenticated prototype wellness score and factors.
+- `GET /api/financial-stress` — authenticated estimated stress score, level, structured factors, and guidance.
+- `GET /api/segmentation` — authenticated K-Means financial-behaviour segment and explanation.
+- `GET /api/recommendations` — authenticated responsible recommendations and explicitly unsuitable products.
+- `GET /api/financial-stress/<customer_id>` and `GET /api/segmentation/<customer_id>` — authenticated compatibility routes that reject cross-user access.
+- `POST /api/auth/register`, `POST /api/auth/login`, and `GET /api/auth/me` — registration and JWT session APIs.
 - `POST /api/auth/demo` — demo identity marked `authenticated: false`; no JWT is issued.
 
-The browser actually requests health, dashboard, and transactions. A visible status distinguishes a connected demo API from an offline preview. Request timeout and errors activate the shared fallback; **Try again** retries all three calls. No raw error trace appears in the interface.
+The browser requests the authenticated dashboard, transactions, recommendations, stress, and segmentation data through one API client. A visible status distinguishes connected data from an unavailable service; request timeouts and errors activate the shared retry state without exposing raw traces.
 
 ## Completed functionality
 
@@ -162,7 +156,7 @@ Seed the existing synthetic customers before using demo buttons on the login pag
 
 ```powershell
 cd 'D:\Paisa Saarthi\backend'
-.\.venv\bin\python.exe seed_demo_users.py
+.\.venv\Scripts\python.exe seed_demo_users.py
 ```
 
 Representative credentials (demo only, not for production):
@@ -173,23 +167,37 @@ Representative credentials (demo only, not for production):
 
 Both demo and registered users use `POST /api/auth/login`, a password hash, a JWT containing the linked `customer_id`, and the same server-side authorization checks. Protected browser routes require a stored JWT; logout clears it. A token is also removed when an API response is 401.
 
-Responsive navy liquid-glass shell; desktop/tablet/mobile navigation; login and demo entry; calculated financial metrics and state; financial-health details; API-driven explainable recommendations; quick-action navigation; spending donut; transaction preview; notification, language, and settings notices; API services and demo identity boundary; CORS allowlist; environment loading; graceful database errors; empty collection setup command; centralized fictional data.
+Responsive navy liquid-glass shell; desktop/tablet/mobile navigation; JWT login and demo entry; calculated financial metrics, financial state, estimated stress, and customer segment; financial-health details; API-driven explainable recommendations; quick-action navigation; spending donut; transaction preview; CORS allowlist; environment loading; graceful database errors; empty collection setup command; centralized fictional data.
 
-The recommendation engine is deterministic: it evaluates calculated income, savings rate, scheduled EMI burden, emergency buffer, and financial state against the fictional product catalog. Each positive suggestion includes a product, suggested action, category, reason, suitability, confidence, priority, “Why this?”, and “Why it may help”. Each unsuitable option includes “Why NOT this?”, the actual calculated conditions that caused rejection, and a safer alternative action. Support and Caution states prioritise budgeting, payment review, and emergency-buffer guidance rather than additional borrowing. It does not make eligibility, lending, or credit decisions.
+## Estimated financial stress
 
-Health and insight values are illustrative, not computed advice. EMI is shown as an informational figure; it is not added again to the monthly spending total. Spending categories sum to the displayed spending, and income minus spending equals savings.
+The deterministic stress indicator ranges from 0–100, where a higher number means greater estimated financial pressure. Levels are LOW (0–24), MODERATE (25–49), HIGH (50–74), and CRITICAL (75–100). Its transparent weighted formula uses income stability (20%), expense burden (20%), savings behaviour (15%), debt/EMI burden (15%), monthly cash-flow surplus (15%), spending pattern (10%), and emergency buffer (5%). Structured factors expose each value, weight, stress points, impact, and explanation.
+
+This is a prototype wellness indicator—not a credit score, eligibility assessment, or lending decision. HIGH and CRITICAL results steer the existing recommendation engine toward cash-flow, budgeting, repayment, and support-first guidance.
+
+## K-Means financial-behaviour segments
+
+The segmentation service uses scikit-learn `StandardScaler` and `KMeans(n_clusters=4, random_state=42, n_init=20)`. Its feature vector contains monthly income, average monthly spending, monthly surplus, savings rate, EMI burden, income stability, expense stability, emergency-buffer months, expense change, transaction frequency, and estimated stress. Missing percentage changes are safely treated as neutral zero; non-finite or insufficient rows are excluded.
+
+Raw cluster numbers are never shown. Cluster centroids are ordered by estimated stress, with savings rate as a deterministic tie-breaker, and mapped to GROWTH, BALANCED, CAUTION, and SUPPORT. The model/scaler bundle is cached by a reproducible hash of the training features, avoiding repeat training while ensuring changed synthetic features produce a new model.
+
+Stress and segmentation require at least two observed months and six real ledger transactions. A new user with only onboarding baseline values receives `insufficient_data` / “Not enough data”; the application does not fabricate transactions or assign a random cluster.
+
+The recommendation engine remains deterministic: it evaluates financial state, estimated stress, the K-Means segment, income, savings rate, scheduled EMI burden, and emergency buffer against the fictional product catalog. Each positive suggestion includes a product, suggested action, category, reason, suitability, confidence, priority, “Why this?”, and “Why it may help”. Each unsuitable option includes “Why NOT this?”, the actual calculated conditions that caused rejection, and a safer alternative action. HIGH/CRITICAL stress and CAUTION/SUPPORT patterns tighten safety guidance rather than promoting additional borrowing. It does not make eligibility, lending, or credit decisions.
+
+Health, stress, segment, and insight values are calculated from synthetic/application data but remain prototype guidance, not professional advice. EMI is shown as an informational figure; it is not added again to the monthly spending total. Spending categories sum to displayed spending, and income minus spending equals savings.
 
 ## Verification
 
 ```powershell
 cd 'D:\Paisa Saarthi\backend'
-.\.venv\bin\python.exe -m unittest -v
+.\.venv\Scripts\python.exe -m unittest -v
 ```
 
-The backend test suite covers route contracts, calculated financial-state consistency, recommendation explanations and safeguards, missing database behavior, invalid URI startup, origin allowlisting, and JSON 404 errors. Run `python -m unittest -v` from `backend`; run `npm run build` from `frontend`.
+The backend test suite covers route contracts, financial-state and stress calculations, K-Means training/preprocessing/segment mapping, insufficient-history behavior, recommendation safeguards, JWT isolation, missing database behavior, invalid URI startup, origin allowlisting, and JSON 404 errors. Run `python -m unittest -v` from `backend`; run `npm run build` from `frontend`.
 
 Remaining setup: a corrected Atlas URI and a successful external Atlas ping/collection creation. No real Atlas connection or persistent-data workflow is claimed. The in-app browser's responsive screenshots are limited by its capture behavior; full independent cross-device visual QA remains advisable.
 
 ## Future phases — intentionally absent
 
-No segmentation, ML, fraud detection, chatbot, multilingual or voice AI, loan calculations or simulator functionality, payments, banking APIs, KYC, credit scoring, production authentication, JWT issuance, or complex notifications. Chat, Security, and Loan Simulator remain previews. The demo routes are public and must not expose real financial records. Add authenticated authorization and production server configuration before using private customer data.
+Fraud/anomaly detection, conversational or vernacular AI, loan-impact calculations, payments, real banking APIs, KYC, real credit scoring, and production deployment hardening remain future work. Chat, Security, and Loan Simulator remain previews. Authentication is implemented with hashed passwords and JWT customer identity, but this hackathon implementation still needs production-grade operational hardening before handling real financial data.

@@ -29,4 +29,8 @@ def transactions():
     if amount <= 0: raise BadRequest('Amount must be positive.')
     tx = {'customer_id':cid, 'transaction_id':f'{cid}-{uuid4().hex[:9]}', 'date':data['date'], 'type':normalized_type, 'category':data['category'], 'amount':round(amount,2), 'merchant':str(data.get('merchant') or 'Not specified').strip(), 'location':str(data.get('location') or 'Not specified').strip(), 'payment_method':'Manual entry', 'synthetic':False}
     get_collection('transactions').insert_one(tx)
+    month = tx['date'][:7]
+    get_collection('customer_profiles').update_one(
+        {'customer_id': cid}, {'$min': {'period_start': month}, '$max': {'period_end': month}}
+    )
     return jsonify(transaction={key:value for key,value in tx.items() if key not in {'synthetic', '_id'}}), 201

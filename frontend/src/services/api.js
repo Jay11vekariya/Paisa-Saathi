@@ -19,4 +19,6 @@ export const getSpending = (id,options) => request(customerPath('spending',id),o
 export const getRecommendations = (id,options) => request(customerPath('recommendations',id),options);
 export const getMyDashboard = options => request('/dashboard', options);
 export const getMyRecommendations = options => request('/recommendations', options);
+export const getFinancialStress = options => request('/financial-stress', options);
+export const getSegmentation = options => request('/segmentation', options);
 export const api = { health: () => request('/health'), dashboard: () => request('/dashboard'), transactions: () => request('/transactions') };

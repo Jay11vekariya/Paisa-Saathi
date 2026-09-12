@@ -10,7 +10,7 @@ def _product(products, product_id):
     return next((item for item in products if item['product_id'] == product_id), None)
 
 
-def _conditions(metrics, state):
+def _conditions(metrics, state, stress=None, segmentation=None):
     """Return only customer conditions that are actually present."""
     conditions = []
     if metrics['income_disruption']:
@@ -25,6 +25,10 @@ def _conditions(metrics, state):
         conditions.append('Current outgoings exceed current income.')
     if metrics['emergency_buffer_months'] < 1:
         conditions.append(f"Emergency savings cover only {metrics['emergency_buffer_months']:.1f} months of average outgoings.")
+    if stress and stress.get('status') == 'available' and stress['stress_level'] in {'HIGH', 'CRITICAL'}:
+        conditions.append(f"Estimated financial stress is {stress['stress_level']} ({stress['stress_score']}/100).")
+    if segmentation and segmentation.get('status') == 'available' and segmentation['segment'] in {'CAUTION', 'SUPPORT'}:
+        conditions.append(f"Longer-term financial behaviour is in the {segmentation['segment']} segment.")
     return conditions or [f"Current calculated financial state is {state.lower()}."]
 
 
@@ -40,7 +44,7 @@ def _rejection(product, why_not, conditions, action, reason):
             'safer_alternative': {'action': action, 'category': 'Financial guidance', 'reason': reason}}
 
 
-def recommend(metrics, financial_state, products):
+def recommend(metrics, financial_state, products, stress=None, segmentation=None):
     """Return stable, customer-first recommendations from verified analysis.
 
     A catalog item is suggested only when a rule connects it to a calculated
@@ -48,8 +52,15 @@ def recommend(metrics, financial_state, products):
     """
     catalog = sorted(products, key=lambda item: item['product_id'])
     state, income = financial_state['state'], metrics['monthly_income']
+    stress_level = stress.get('stress_level') if stress and stress.get('status') == 'available' else None
+    segment = segmentation.get('segment') if segmentation and segmentation.get('status') == 'available' else None
+    decision_state = state
+    if stress_level == 'CRITICAL' or segment == 'SUPPORT':
+        decision_state = 'SUPPORT'
+    elif (stress_level == 'HIGH' or segment == 'CAUTION') and state in {'GROWTH', 'NORMAL'}:
+        decision_state = 'CAUTION'
     buffer, savings_rate = metrics['emergency_buffer_months'], metrics['savings_rate']
-    conditions = _conditions(metrics, state)
+    conditions = _conditions(metrics, state, stress, segmentation)
     recommendations, not_recommended = [], []
 
     def include(product_id, action, reason, why_this, why_help, priority, suitability, confidence):
@@ -62,7 +73,7 @@ def recommend(metrics, financial_state, products):
         if product:
             not_recommended.append(_rejection(product, why_not, rejection_conditions, action, reason))
 
-    if state == 'SUPPORT':
+    if decision_state == 'SUPPORT':
         include('PR007', 'Create an essentials-first monthly budget', 'Cash flow needs stabilising before new commitments.',
                 'Recent income or recorded EMI payments need attention before new commitments.',
                 'It focuses the next step on essential outgoings, payment review, and a workable monthly plan.', 'NOW', 'Strong fit', 'High')
@@ -75,7 +86,7 @@ def recommend(metrics, financial_state, products):
                'Build accessible emergency savings first', 'Keep money available for essentials before considering long-term investment risk.')
         reject('PR002', 'A fixed recurring contribution may be hard to sustain until cash flow stabilises.',
                'Use a flexible weekly savings target', 'Set aside only what remains after essential bills and scheduled payments.')
-    elif state == 'CAUTION':
+    elif decision_state == 'CAUTION':
         include('PR008', 'Build an accessible emergency buffer', 'Caution signals make accessible savings more valuable than extra commitments.',
                 f'Your buffer is {buffer:.1f} months and your financial state has caution signals.',
                 'Building accessible emergency savings can reduce the need to rely on new borrowing for surprises.', 'NOW', 'Strong fit', 'High')
@@ -91,7 +102,7 @@ def recommend(metrics, financial_state, products):
                'Reduce discretionary spending and review repayments', 'Create breathing room in the monthly plan before considering any new debt.')
         reject('PR003', 'Strengthening cash flow and the emergency buffer comes before taking investment risk.',
                'Grow accessible emergency savings', 'Prioritise liquid savings until the caution signals improve.')
-    elif state == 'GROWTH':
+    elif decision_state == 'GROWTH':
         if savings_rate >= 20 and income >= 15000:
             include('PR002', 'Automate a goal-based monthly saving amount', 'Stable positive savings can support a regular goal contribution.',
                     f'You retained {savings_rate:.1f}% of income and your cash flow is currently stable.',
@@ -131,8 +142,13 @@ def recommend(metrics, financial_state, products):
     priority_order = {'NOW': 0, 'NEXT': 1, 'CONSIDER': 2}
     recommendations.sort(key=lambda item: (priority_order[item['priority']], item['product']['product_id']))
     not_recommended.sort(key=lambda item: item['product']['product_id'])
-    return {'financial_state': state, 'recommended_focus': financial_state['recommended_focus'],
+    recommended_focus = financial_state['recommended_focus']
+    if decision_state != state and stress and stress.get('guidance'):
+        recommended_focus = stress['guidance'][0]
+    return {'financial_state': state, 'decision_state': decision_state,
+            'financial_stress': stress, 'segmentation': segmentation,
+            'recommended_focus': recommended_focus,
             'engine': {'version': 'rules-v1', 'decision_mode': 'deterministic',
-                       'signals_used': ['financial_state', 'monthly_income', 'savings_rate', 'emi_burden', 'emergency_buffer_months']},
+                       'signals_used': ['financial_state', 'financial_stress', 'customer_segment', 'monthly_income', 'savings_rate', 'emi_burden', 'emergency_buffer_months']},
             'recommendations': recommendations, 'not_recommended': not_recommended,
-            'methodology': 'Deterministic rules use the calculated financial state, cash flow, EMI burden, and emergency buffer. This is prototype guidance, not a credit or eligibility decision.'}
+            'methodology': 'Deterministic rules use the calculated financial state, estimated stress, K-Means segment, cash flow, EMI burden, and emergency buffer. This is prototype guidance, not a credit or eligibility decision.'}

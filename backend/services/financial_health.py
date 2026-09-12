@@ -5,6 +5,7 @@ import statistics
 from collections import defaultdict
 
 from services.financial_state import determine_state, insight_for
+from services.financial_stress import calculate_stress
 from utils.validation import validate_transaction
 
 def clamp(value):
@@ -94,12 +95,17 @@ def analyse(customer, transactions, profile):
                   positive_factors=[f['label'] for f in factors if f['score']>=75],
                   areas_to_review=[f['label'] for f in factors if f['score']<60])
     state = determine_state(metrics)
+    data_quality = dict(transaction_count=len(ledger),
+                        observed_months=sum(1 for item in history if item['income'] or item['expenses']),
+                        baseline_only=bool(baseline and not transactions))
+    financial_stress = calculate_stress(customer['customer_id'], metrics, data_quality)
     year, month = map(int,months[-1].split('-'))
     daily_series = [dict(date=f'{months[-1]}-{day:02d}',amount=round(daily[f'{months[-1]}-{day:02d}'],2))
                     for day in range(1,calendar.monthrange(year,month)[1]+1)]
     category_rows = [dict(name=k,amount=round(v,2),percentage=round(v/cur['expenses']*100,1) if cur['expenses'] else 0)
                      for k,v in sorted(categories.items(),key=lambda pair:pair[1],reverse=True)]
-    return dict(customer=customer,financial_health=health,financial_state=state,metrics=metrics,
+    return dict(customer=customer,financial_health=health,financial_state=state,financial_stress=financial_stress,
+                data_quality=data_quality,metrics=metrics,
                 spending=dict(categories=category_rows,daily=daily_series,monthly=history),
                 recent_transactions=sorted(ledger,key=lambda t:(t['date'],t['transaction_id']),reverse=True)[:5],
                 insight=insight_for(state,metrics),period=dict(start=months[0],month=months[-1],complete=True),

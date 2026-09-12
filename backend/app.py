@@ -8,7 +8,7 @@ from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 from config import Config
 from db import init_db, DatabaseUnavailable
-from routes import auth, dashboard, transactions, health, analytics, recommendations
+from routes import auth, dashboard, transactions, health, analytics, recommendations, insights
 
 def create_app(config=None):
     app = Flask(__name__)
@@ -17,7 +17,7 @@ def create_app(config=None):
         app.config.update(config)
     CORS(app, resources={r'/api/*': {'origins': app.config['CORS_ORIGINS']}}, supports_credentials=False)
     init_db(app)
-    for module in (auth, dashboard, transactions, health, analytics, recommendations):
+    for module in (auth, dashboard, transactions, health, analytics, recommendations, insights):
         app.register_blueprint(module.bp, url_prefix='/api')
 
     @app.errorhandler(PyMongoError)
@@ -33,7 +33,7 @@ def create_app(config=None):
     def handle_error(error):
         if isinstance(error, HTTPException):
             return jsonify(error=error.description), error.code
-        app.logger.error('Unhandled request failure (%s)', type(error).__name__)
+        app.logger.exception('Unhandled request failure (%s)', type(error).__name__)
         return jsonify(error='Something went wrong. Please try again.'), 500
     @app.cli.command('init-db')
     def init_database_command():

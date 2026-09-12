@@ -1,5 +1,27 @@
 # Project Status
 
+## Completed: Financial stress detection
+
+- Added a deterministic 0–100 Estimated Financial Stress indicator with LOW, MODERATE, HIGH, and CRITICAL levels.
+- The documented formula uses income stability (20%), expense burden (20%), savings behaviour (15%), debt/EMI burden (15%), cash-flow surplus (15%), spending pattern (10%), and emergency buffer (5%).
+- Responses contain structured factors, positive factors, guidance, data-quality metadata, and an explicit statement that this is not a credit score or lending decision.
+- Added authenticated `GET /api/financial-stress` plus an identity-checked parameterized compatibility route.
+- New users require at least two observed months and six transactions; onboarding baselines alone return `insufficient_data` without fabricated behaviour.
+
+## Completed: K-Means customer segmentation
+
+- Added actual scikit-learn K-Means clustering with four clusters, `StandardScaler`, `random_state=42`, and `n_init=20`.
+- Features: income, average spending, monthly surplus, savings rate, EMI burden, income/expense stability, emergency buffer, expense change, transaction frequency, and estimated stress.
+- Raw cluster IDs are mapped by centroid risk order to GROWTH, BALANCED, CAUTION, and SUPPORT; stress is dominant and savings rate is the deterministic tie-breaker.
+- Model/scaler bundles are cached by a hash of training features and retrained when those features change.
+- Added authenticated `GET /api/segmentation` plus an identity-checked parameterized compatibility route.
+
+## Completed: Responsible-personalization integration
+
+- Dashboard and Financial Health now display Liquid Glass stress and financial-profile cards, factor explanations, confidence, characteristics, and insufficient-data states.
+- Recommendations display recent financial state, estimated stress, and longer-term segment together.
+- The existing recommendation engine consumes both new signals. HIGH/CRITICAL stress or CAUTION/SUPPORT patterns tighten guidance while preserving “Why NOT This?” and safer alternatives.
+
 ## Completed: Authentication and new-user personalization
 
 - Added password-hashed registration, JWT login/session identity, logout, profile onboarding, and private transaction entry.
@@ -25,4 +47,4 @@
 
 ## Intentionally not implemented
 
-Fraud detection, segmentation, loan-simulator functionality, vernacular AI, and security features remain outside this task.
+Fraud/anomaly detection, loan-impact simulator functionality, vernacular/conversational AI, and production security/deployment hardening remain outside this task.
