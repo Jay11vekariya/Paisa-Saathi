@@ -37,6 +37,9 @@ def recommendations_for_authenticated(cid):
 def transactions_for_authenticated(cid, page=1, limit=20):
     return transactions_for(cid, page, limit) if is_synthetic_customer(cid) else private_transactions_for(cid, page, limit)
 
+def ledger_for_authenticated(cid):
+    return load_ledger(cid) if is_synthetic_customer(cid) else load_private_ledger(cid)
+
 def load_private_ledger(cid):
     user = get_collection('users').find_one({'customer_id':cid, 'synthetic': {'$ne': True}}, dict(USER_FIELDS))
     if user is None:

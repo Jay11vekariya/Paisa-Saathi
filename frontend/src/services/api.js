@@ -21,4 +21,6 @@ export const getMyDashboard = options => request('/dashboard', options);
 export const getMyRecommendations = options => request('/recommendations', options);
 export const getFinancialStress = options => request('/financial-stress', options);
 export const getSegmentation = options => request('/segmentation', options);
+export const getAnomalies = options => request('/anomalies', options);
+export const simulateLoan = (data,options={}) => request('/loan-simulator', { ...options, method:'POST', body:JSON.stringify(data) });
 export const api = { health: () => request('/health'), dashboard: () => request('/dashboard'), transactions: () => request('/transactions') };
