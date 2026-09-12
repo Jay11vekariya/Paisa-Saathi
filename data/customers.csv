@@ -1,0 +1,21 @@
+customer_id,name,age,city,language,monthly_income,employment_type,monthly_emi,account_balance
+PS001,Rahul Patel,29,Ahmedabad,Gujarati,75000,Salaried,12000,512848.0
+PS002,Priya Shah,31,Surat,Hindi,65000,Salaried,8000,315400.0
+PS003,Ramesh Patel,42,Rajkot,Gujarati,38000,Salaried,14000,62496.0
+PS004,Aman Verma,27,Mumbai,Hindi,45000,Salaried,12500,35009.0
+PS005,Meera Desai,34,Vadodara,Gujarati,82000,Salaried,9000,597798.0
+PS006,Arjun Rao,30,Bengaluru,English,110000,Salaried,18000,493600.0
+PS007,Neha Joshi,26,Pune,Hindi,52000,Salaried,6000,376459.0
+PS008,Kiran Shah,45,Ahmedabad,Gujarati,62000,Salaried,21000,118527.0
+PS009,Vivek Sharma,38,Delhi,Hindi,94000,Salaried,15000,425240.0
+PS010,Isha Mehta,28,Surat,Gujarati,58000,Salaried,4500,439622.0
+PS011,Dev Patel,33,Rajkot,Gujarati,47000,Salaried,12000,172138.0
+PS012,Sana Khan,29,Mumbai,Hindi,72000,Salaried,26000,123134.0
+PS013,Rohan Kulkarni,36,Pune,English,89000,Salaried,12000,628745.0
+PS014,Anjali Nair,41,Bengaluru,English,105000,Salaried,22000,427800.0
+PS015,Nitin Solanki,39,Vadodara,Gujarati,41000,Salaried,11000,35000.0
+PS016,Kavya Singh,25,Delhi,Hindi,49000,Salaried,5500,356124.0
+PS017,Yash Trivedi,32,Ahmedabad,Gujarati,68000,Salaried,10500,310762.0
+PS018,Pooja Soni,37,Rajkot,Hindi,57000,Salaried,18500,116228.0
+PS019,Aditya Shah,28,Surat,Gujarati,76000,Salaried,9500,543629.0
+PS020,Ritu Verma,43,Mumbai,Hindi,63000,Salaried,18000,44991.0

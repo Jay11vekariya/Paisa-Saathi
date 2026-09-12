@@ -1,0 +1,167 @@
+# Paisa Saathi
+
+**Your Money, Your Needs, Your Saathi.**
+
+Team Quantum Crew · AI-Powered Hyper-Personalized Banking for Bharat · Digital Transformation in Lending.
+
+## Current phase
+
+Phase 1: a React application shell, polished fictional financial dashboard, Flask REST API, and MongoDB Atlas foundation. This is a local development project, not a production banking system. Phase 2 has not been started.
+
+## Stack and structure
+
+React, Vite, JavaScript/JSX, React Router, Lucide React, CSS variables; Python, Flask, Flask-CORS, PyMongo, python-dotenv.
+
+```text
+frontend/
+  public/favicon.svg
+  src/
+    assets/
+    components/
+      layout/Shell.jsx
+      ui/Brand.jsx
+      dashboard/{Transactions,Spending}.jsx
+      common/
+    pages/{Login,Dashboard,FinancialHealth,Recommendations,Chat,Security,LoanSimulator,FeaturePage}.jsx
+    services/{api,auth}.js
+    hooks/useDashboard.js
+    utils/format.js
+    App.jsx, main.jsx, index.css
+  index.html, package.json, package-lock.json
+  .env, .env.example
+backend/
+  routes/{auth,dashboard,transactions,health}.py
+  services/{auth,demo}.py
+  models/collections.py
+  utils/
+  app.py, config.py, db.py, requirements.txt, test_api.py
+  .env, .env.example
+ data/
+  demo.json, customers.csv, transactions.csv, products.csv
+models/
+README.md
+.gitignore
+```
+
+All source files above were created for Phase 1. Empty extension directories intentionally contain no implementation. CSV files are future import examples; `data/demo.json` is the single runtime fixture used by Flask and the frontend fallback. Products contains headers only; no recommendations are invented.
+
+## Prerequisites
+
+Node.js 22+, npm, Python 3.11+, and a MongoDB Atlas cluster with a database user and the development machine permitted in Atlas Network Access. Standard CPython is simplest on Windows. This machine's `python` is MSYS2 and uses `.venv/bin` instead of `.venv/Scripts`.
+
+## Frontend setup and run
+
+```powershell
+cd 'D:\Paisa Saarthi\frontend'
+npm install
+# Only if .env does not already exist:
+Copy-Item .env.example .env
+npm run dev
+```
+
+Open http://127.0.0.1:5173. Choose **Demo Login** to open the dashboard. Regular login intentionally displays a future-phase notice and never transmits entered credentials.
+
+```powershell
+npm run build
+npm run preview
+```
+
+For a preview on port 4173, add that exact origin to backend `CORS_ORIGINS` and restart Flask.
+
+## Backend setup and run
+
+Standard Windows Python:
+
+```powershell
+cd 'D:\Paisa Saarthi\backend'
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+# Only if .env does not already exist:
+Copy-Item .env.example .env
+python app.py
+```
+
+For the MSYS2 virtual environment already created on this machine:
+
+```powershell
+cd 'D:\Paisa Saarthi\backend'
+.\.venv\bin\python.exe -m pip install -r requirements.txt
+.\.venv\bin\python.exe app.py
+```
+
+macOS/Linux activation: `source .venv/bin/activate`. The API listens on `127.0.0.1:5000`. Run frontend and backend in separate terminals. Restart Flask after changing Python code or backend environment variables; restart Vite after changing frontend environment variables.
+
+## Environment variables
+
+Frontend `.env`:
+
+```dotenv
+VITE_API_BASE_URL=http://localhost:5000/api
+```
+
+Backend `.env`:
+
+```dotenv
+MONGO_URI=
+MONGO_DB_NAME=paisaSaathiDB
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+PORT=5000
+```
+
+Only `VITE_API_BASE_URL` belongs in the frontend. Never place MongoDB credentials in a `VITE_` variable. `.env` and virtual environments are ignored; `.env.example` contains no credentials.
+
+## MongoDB Atlas setup
+
+The supplied URI appears to lack the `@` separator before the cluster hostname. Its validity has not been confirmed. `backend/.env` deliberately leaves `MONGO_URI` empty rather than guessing a password. Paste the valid connection string from Atlas into that local file. The shape is:
+
+```text
+mongodb+srv://<username>:<url-encoded-password>@<cluster-host>/?appName=Cluster0
+```
+
+The database is selected separately as **paisaSaathiDB**. Do not include Markdown backslash escapes in the username. URI special characters in credentials must be percent-encoded. Allow your development IP in Atlas, and grant the database user the required access to this database.
+
+Restart Flask after updating `.env`. Check `GET /api/health/database`: it returns HTTP 200 and `connected` after a successful ping, or HTTP 503 and `unavailable`. Logs report a sanitized configuration error without dumping the URI. The API liveness endpoint remains healthy when the database is unavailable because Phase 1 endpoints serve demo fixtures.
+
+Once the connection is verified, prepare the empty collections:
+
+```powershell
+# Standard activated virtual environment:
+python -m flask --app app:create_app init-db
+# Existing MSYS2 virtual environment:
+.\.venv\bin\python.exe -m flask --app app:create_app init-db
+```
+
+This idempotent command creates `users`, `transactions`, `financial_profiles`, `recommendations`, `alerts`, `chat_history`, and `products`. It does not seed, delete, or overwrite records. MongoDB creates the database when its first collection is created. `get_collection(name)` is the shared abstraction for later services. The running Flask process reuses one MongoClient. If the connection was unavailable at startup, restart after correcting configuration.
+
+## API endpoints
+
+- `GET /api/health` — exact service/version liveness response.
+- `GET /api/health/database` — separate database connectivity status (200/503).
+- `GET /api/dashboard` — fictional Rahul Patel dashboard, with `source: demo`.
+- `GET /api/transactions` — five fictional transactions, with `source: demo`.
+- `GET /api/financial-health` — demo score/status, with `source: demo`.
+- `POST /api/auth/demo` — demo identity marked `authenticated: false`; no JWT is issued.
+
+The browser actually requests health, dashboard, and transactions. A visible status distinguishes a connected demo API from an offline preview. Request timeout and errors activate the shared fallback; **Try again** retries all three calls. No raw error trace appears in the interface.
+
+## Completed functionality
+
+Responsive navy liquid-glass shell; desktop/tablet/mobile navigation; login and demo entry; financial metrics; Growth Mode and static insight; quick-action navigation; spending donut; transaction preview; intentional future-feature pages; notification, language, and settings notices; API services and demo identity boundary; CORS allowlist; environment loading; graceful database errors; empty collection setup command; centralized fictional data.
+
+Health and insight values are illustrative, not computed advice. EMI is shown as an informational figure; it is not added again to the monthly spending total. Spending categories sum to the displayed spending, and income minus spending equals savings.
+
+## Verification
+
+```powershell
+cd 'D:\Paisa Saarthi\backend'
+.\.venv\bin\python.exe -m unittest -v
+```
+
+Five API tests cover route contracts and financial fixture consistency, missing database behavior, invalid URI startup, origin allowlisting, and JSON 404 errors. `npm run build` passes. React Router's `use client` directives produce harmless Vite bundling warnings. Live Flask endpoints return successfully. Browser checks confirmed Demo Login, API-connected dashboard, offline fallback/retry, and collapsible navigation. CSS includes breakpoints for desktop, compact tablet navigation, and stacked mobile cards with reduced-motion support.
+
+Remaining setup: a corrected Atlas URI and a successful external Atlas ping/collection creation. No real Atlas connection or persistent-data workflow is claimed. The in-app browser's responsive screenshots are limited by its capture behavior; full independent cross-device visual QA remains advisable.
+
+## Future phases — intentionally absent
+
+No segmentation, ML, fraud/stress detection, recommendation engine, chatbot, multilingual or voice AI, loan calculations, payments, banking APIs, KYC, credit scoring, production authentication, JWT issuance, or complex notifications. The five feature pages are previews, not working AI modules. The demo routes are public and must not expose real financial records. Add authenticated authorization and production server configuration before using private customer data.

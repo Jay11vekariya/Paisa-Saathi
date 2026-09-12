@@ -1,0 +1,9 @@
+product_id,product_name,category,description,minimum_income,risk_level,ideal_customer_state
+PR001,Flexible savings account,Savings,Fictional savings product for dataset testing.,0,Low,NORMAL
+PR002,Recurring deposit,Savings,Illustrative regular-deposit product.,15000,Low,GROWTH
+PR003,Diversified investment learning plan,Investment,Fictional product; returns are not promised.,30000,Medium,GROWTH
+PR004,Family health cover,Insurance,"Illustrative cover, with no actual policy terms.",20000,Low,NORMAL
+PR005,Education loan example,Loan,Dataset example only; no eligibility decision.,25000,Medium,NORMAL
+PR006,Responsible credit guide,Credit,Fictional educational credit product.,18000,Medium,CAUTION
+PR007,Cash-flow essentials,Financial Education,Educational budgeting resource placeholder.,0,Low,SUPPORT
+PR008,Emergency fund planner,Financial Education,Fictional emergency savings learning resource.,0,Low,CAUTION

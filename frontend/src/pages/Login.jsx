@@ -1,0 +1,12 @@
+import React from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowRight, ShieldCheck, Eye, EyeOff, TrendingUp } from 'lucide-react';
+import Brand from '../components/ui/Brand';
+export default function Login() {
+ const [visible,setVisible] = useState(false), [message,setMessage] = useState('');
+ const navigate = useNavigate();
+ return <div className="login-page"><section className="login-story"><Brand/><div className="login-intro"><span className="eyebrow">A MORE PERSONAL WAY TO BANK</span><h1>Banking that<br/>understands <em>you.</em></h1><p>Personalized financial guidance built around your needs, goals, and financial journey.</p><div className="glass login-preview"><span className="sparkle-box"><TrendingUp/></span><div><small>YOUR NEXT CHAPTER</small><strong>More clarity. More confidence.</strong><p>Your Money, Your Needs, Your Saathi.</p></div></div></div><small className="login-credit">Made for Bharat. Built by Quantum Crew.</small></section><section className="login-form-side"><div className="glass login-card"><span className="eyebrow">YOUR JOURNEY STARTS HERE</span><h2>Welcome back.</h2><p>A clearer picture of your money awaits.</p><form onSubmit={e => { e.preventDefault(); setMessage('Account sign-in is planned for a future phase. Use Demo Login to explore.'); }}><label htmlFor="identity">Mobile number or email</label><input id="identity" name="identity" autoComplete="username" placeholder="Enter mobile number or email" required/><label htmlFor="password">Password or PIN</label><div className="password-field"><input id="password" name="password" type={visible ? 'text' : 'password'} autoComplete="current-password" placeholder="Enter password or PIN" required/><button type="button" aria-label={visible ? 'Hide password' : 'Show password'} onClick={() => setVisible(!visible)}>{visible ? <EyeOff size={18}/> : <Eye size={18}/>}</button></div><button className="primary-button" type="submit">Log in <ArrowRight size={18}/></button>{message && <p className="form-message" role="status">{message}</p>}</form><div className="divider"><span>JUST EXPLORING?</span></div><button className="demo-button" onClick={() => navigate('/dashboard')}>Demo Login <ArrowRight size={18}/></button><p className="login-note"><ShieldCheck size={16}/> No bank account or personal details needed.</p></div><span className="muted">Phase 2 preview · Fictional data only</span></section></div>;
+}
+
+
