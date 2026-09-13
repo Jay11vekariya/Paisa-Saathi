@@ -47,7 +47,7 @@ The synthetic dataset supplies customer histories and fictional products. Recomm
 
 ## Prerequisites
 
-Node.js 22+, npm, standard CPython 3.11–3.13, and a MongoDB Atlas cluster with a database user and the development machine permitted in Atlas Network Access. Standard CPython is required on Windows so compiled NumPy/scikit-learn wheels install reliably.
+Node.js 22+, npm, standard CPython 3.11–3.13, Ollama for Windows, and a MongoDB Atlas cluster with a database user and the development machine permitted in Atlas Network Access. Standard CPython is required on Windows so compiled NumPy/scikit-learn wheels install reliably.
 
 ## Frontend setup and run
 
@@ -101,9 +101,29 @@ CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 PORT=5000
 JWT_SECRET_KEY=replace-with-a-long-random-secret
 JWT_EXPIRY_HOURS=24
+AI_PROVIDER=ollama
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=qwen3:1.7b
+OLLAMA_TIMEOUT_SECONDS=150
+OLLAMA_CONTEXT_SIZE=4096
+OLLAMA_MAX_TOKENS=250
 ```
 
-Only `VITE_API_BASE_URL` belongs in the frontend. Never place MongoDB credentials in a `VITE_` variable. `.env` and virtual environments are ignored; `.env.example` contains no credentials.
+Only `VITE_API_BASE_URL` belongs in the frontend. Saathi AI uses Ollama on the local machine and requires no cloud AI API key. When Ollama or its model is unavailable, Saathi AI uses a limited offline-safe grounded fallback. `.env` and virtual environments are ignored; `.env.example` contains no credentials.
+
+## Local Saathi AI setup (Windows)
+
+Install Ollama from the official Windows package, then download the small multilingual model once:
+
+```powershell
+winget install --id Ollama.Ollama --exact
+ollama pull qwen3:1.7b
+ollama list
+```
+
+Ollama normally starts its local service automatically. Verify it with `ollama --version` and open `http://127.0.0.1:11434/api/tags` locally if needed. The selected quantized model is approximately 1.4 GB and uses a bounded 4,096-token context for reasonable CPU usage. After the one-time model download, chat inference stays local and needs no Gemini, OpenAI, or other cloud AI credential.
+
+Paisa Saathi's backend financial-health, stress, segmentation, recommendation, loan, and anomaly engines remain authoritative. The local LLM handles open-ended conversation and explains the small verified context supplied by those engines; it does not calculate or invent customer financial facts.
 
 ## MongoDB Atlas setup
 
@@ -200,4 +220,4 @@ Remaining setup: a corrected Atlas URI and a successful external Atlas ping/coll
 
 ## Future phases — intentionally absent
 
-Fraud/anomaly detection, conversational or vernacular AI, loan-impact calculations, payments, real banking APIs, KYC, real credit scoring, and production deployment hardening remain future work. Chat, Security, and Loan Simulator remain previews. Authentication is implemented with hashed passwords and JWT customer identity, but this hackathon implementation still needs production-grade operational hardening before handling real financial data.
+Payments, real banking APIs, KYC, real credit scoring, and production deployment hardening remain future work. Authentication is implemented with hashed passwords and JWT customer identity, but this hackathon implementation still needs production-grade operational hardening before handling real financial data.

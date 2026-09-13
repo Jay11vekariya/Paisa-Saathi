@@ -75,6 +75,15 @@ class DecisionToolTests(unittest.TestCase):
             self.assertTrue(result['key_impacts'])
             self.assertIn('not a loan approval', result['disclaimer'].lower())
 
+    def test_projected_emi_burden_change_matches_the_new_emi(self):
+        analysis = self.analysis('PS001')
+        result = simulate_loan(analysis, {'loan_amount':500000, 'annual_interest_rate':10,
+                                          'tenure_months':60, 'existing_emi':None, 'purpose':'Test'})
+        current = result['current_financial_snapshot']['emi_burden_pct']
+        projected = result['projected_financial_snapshot']['emi_burden_pct']
+        expected_change = result['emi'] / result['current_financial_snapshot']['monthly_income'] * 100
+        self.assertAlmostEqual(projected - current, expected_change, places=1)
+
 
 class DecisionToolApiTests(unittest.TestCase):
     def setUp(self):

@@ -1,0 +1,19 @@
+flowchart TB
+  Customer --> UI[React responsive UI]
+  UI --> API[Flask API + JWT]
+  API --> MongoDB
+  API --> Intelligence[Financial Intelligence]
+  Intelligence --> Transactions
+  Intelligence --> Health[Financial Health]
+  Intelligence --> Stress[Financial Stress]
+  Intelligence --> Segmentation[K-Means Segmentation]
+  Intelligence --> Recommendations
+  Intelligence --> Loan[Loan Impact Simulator]
+  Intelligence --> Anomaly[Anomaly Detection]
+  Intelligence --> Alerts[Proactive Intervention]
+  Intelligence --> Grounding[Verified Context]
+  Grounding --> Saathi[Saathi AI]
+  Saathi --> Ollama --> Qwen[Qwen 3 1.7B]
+  Responsible[Privacy · Consent · Explainability · Fairness · Audit] -.-> API
+  Responsible -.-> Intelligence
+  Responsible -.-> Saathi

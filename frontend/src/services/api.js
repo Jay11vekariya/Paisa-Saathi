@@ -23,4 +23,17 @@ export const getFinancialStress = options => request('/financial-stress', option
 export const getSegmentation = options => request('/segmentation', options);
 export const getAnomalies = options => request('/anomalies', options);
 export const simulateLoan = (data,options={}) => request('/loan-simulator', { ...options, method:'POST', body:JSON.stringify(data) });
+export const sendChatMessage = (message,conversation_context=[],options={}) => request('/chat', { ...options, signal:options.signal||AbortSignal.timeout(165000), method:'POST', body:JSON.stringify({message,conversation_context}) });
+export const getAlerts = options => request('/alerts', options);
+export const updateAlert = (id,action) => request(`/alerts/${encodeURIComponent(id)}/${action}`, {method:'POST'});
+export const startLoanJourney = options => request('/loan-journey/start', {method:'POST', ...options});
+export const assessLoanJourney = data => request('/loan-journey/assessment', {method:'POST', body:JSON.stringify(data)});
+export const getKycDemo = options => request('/kyc/demo', options);
+export const completeKycDemo = data => request('/kyc/demo/complete', {method:'POST', body:JSON.stringify(data)});
+export const getPrivacy = options => request('/privacy', options);
+export const updatePrivacy = data => request('/privacy', {method:'PUT', body:JSON.stringify(data)});
+export const getResponsibleAI = options => request('/responsible-ai', options);
+export const getDemoScenarios = options => request('/demo/scenarios', options);
+export const launchDemoScenario = scenario_id => request('/demo/session', {method:'POST', body:JSON.stringify({scenario_id})});
+export const resetDemo = () => request('/demo/reset', {method:'POST'});
 export const api = { health: () => request('/health'), dashboard: () => request('/dashboard'), transactions: () => request('/transactions') };

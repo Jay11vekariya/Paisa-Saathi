@@ -31,6 +31,18 @@ def recommendations_for_authenticated(cid):
     products = product_catalog()
     result = recommend(analysis['metrics'], analysis['financial_state'], products,
                        analysis['financial_stress'], analysis['segmentation'])
+    need = analysis['customer'].get('primary_banking_need')
+    preferred_categories = {
+        'Save': {'Savings'}, 'Borrow': {'Loan', 'Credit'}, 'Invest': {'Investment'},
+        'Manage expenses': {'Financial Education'}, 'Protect finances': {'Insurance'},
+    }.get(need, set())
+    if preferred_categories:
+        result['recommendations'].sort(key=lambda item: item['category'] not in preferred_categories)
+    result['customer_preferences'] = {
+        'primary_banking_need': need,
+        'financial_goals': analysis['customer'].get('financial_goals', []),
+        'applied_to_ordering': bool(preferred_categories),
+    }
     return dict(customer=analysis['customer'], metrics=analysis['metrics'], period=analysis['period'],
                 source=analysis['source'], synthetic=analysis['synthetic'], **result)
 

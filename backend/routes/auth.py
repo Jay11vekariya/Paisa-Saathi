@@ -24,7 +24,7 @@ def number(data, field, allow_zero=True):
     if isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0 or (not allow_zero and value == 0): raise BadRequest(f'{field.replace("_", " ").title()} must be a valid amount.')
     return round(float(value), 2)
 def user_view(user):
-    return {key:user.get(key) for key in ('customer_id','name','email','role','synthetic','age','city','language','employment_type','monthly_income','monthly_expenses','monthly_emi','account_balance')}
+    return {key:user.get(key) for key in ('customer_id','name','email','role','synthetic','age','city','language','employment_type','monthly_income','monthly_expenses','monthly_emi','account_balance','financial_goals','primary_banking_need')}
 def new_customer_id():
     ids = [int(row['customer_id'][2:]) for row in get_collection('users').find({'customer_id': {'$regex': '^PS[0-9]+$'}}, {'customer_id':1})]
     return f'PS{(max(ids) if ids else 0)+1:03d}'
@@ -72,7 +72,15 @@ def save_profile():
     if not 18 <= age <= 120: raise BadRequest('Age must be between 18 and 120.')
     language = text(data, 'language'); employment_type = text(data, 'employment_type')
     if language not in LANGUAGES or employment_type not in EMPLOYMENT_TYPES: raise BadRequest('Choose a supported language and employment type.')
-    update = {'name': text(data, 'full_name', 2), 'age':age, 'city':text(data, 'city', 2), 'language':language, 'employment_type':employment_type, 'monthly_income':number(data, 'monthly_income', False), 'monthly_expenses':number(data, 'monthly_expenses'), 'monthly_emi':number(data, 'monthly_emi'), 'account_balance':number(data, 'account_balance'), 'onboarding_complete':True}
+    goals = data.get('financial_goals', [])
+    if isinstance(goals, str): goals = [goals]
+    allowed_goals = {'Build emergency fund', 'Reduce debt', 'Save for education', 'Buy a home', 'Grow wealth'}
+    if not isinstance(goals, list) or any(goal not in allowed_goals for goal in goals):
+        raise BadRequest('Choose valid financial goals.')
+    need = str(data.get('primary_banking_need') or 'Manage expenses').strip()
+    if need not in {'Save', 'Borrow', 'Invest', 'Manage expenses', 'Protect finances'}:
+        raise BadRequest('Choose a primary banking need.')
+    update = {'name': text(data, 'full_name', 2), 'age':age, 'city':text(data, 'city', 2), 'language':language, 'employment_type':employment_type, 'monthly_income':number(data, 'monthly_income', False), 'monthly_expenses':number(data, 'monthly_expenses'), 'monthly_emi':number(data, 'monthly_emi'), 'account_balance':number(data, 'account_balance'), 'financial_goals':goals, 'primary_banking_need':need, 'onboarding_complete':True}
     get_collection('users').update_one({'customer_id':g.customer_id, 'synthetic': {'$ne':True}}, {'$set':update})
     profile_doc = {'customer_id':g.customer_id, 'opening_balance':update['account_balance'], 'period_start':date.today().strftime('%Y-%m'), 'period_end':date.today().strftime('%Y-%m'), 'baseline': {key:update[key] for key in ('monthly_income','monthly_expenses','monthly_emi','account_balance')}}
     get_collection('customer_profiles').update_one({'customer_id':g.customer_id}, {'$set':profile_doc}, upsert=True)
